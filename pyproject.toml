@@ -1,0 +1,20 @@
+[project]
+name = "kitaev"
+version = "1.0.0"
+description = "A program that solves an open Kitaev chain using third quantization"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {file = "LICENSE.txt"}
+authors = [
+  {name = "Giovanni Abati", email = "gioabati@gmail.com" }
+]
+
+[project.urls]
+"Homepage" = "https://github.com/gioviat/kitaev"
+"Bug Reports" = "https://github.com/gioviat/kitaev/issues"
+
+[build-system]
+requires = ["setuptools>=69.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+
