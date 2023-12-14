@@ -1,5 +1,8 @@
+from kitaev.assemblers import kit_hamiltonian
+
+
 def main():
-    print('Hello Fraz')
+    kit_hamiltonian(.3, .7, .5, 25)
 
 
 if __name__ == '__main__':

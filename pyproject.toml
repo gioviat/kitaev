@@ -8,6 +8,10 @@ license = {file = "LICENSE.txt"}
 authors = [
   {name = "Giovanni Abati", email = "gioabati@gmail.com" }
 ]
+dependencies = [
+  'numpy',
+  'matplotlib'
+]
 
 [project.urls]
 "Homepage" = "https://github.com/gioviat/kitaev"
