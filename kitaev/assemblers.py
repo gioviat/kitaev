@@ -55,7 +55,9 @@ def bath_operators(loss: float, gain: float, sites: int) -> np.ndarray:
 
 def dissipator(h: np.ndarray, l: np.ndarray, sites: int) -> None:
     """
-    This function calculates the matrices A, M and V
+    This function calculates the matrices M and Z, calculates
+    the eigenvalues of -Z (corresponding to the eigenvalues of
+    the Lindbladian) and plots them.
     :param h: 
     :param l: 
     :param sites: 
