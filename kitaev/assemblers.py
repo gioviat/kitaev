@@ -1,4 +1,7 @@
 import numpy as np
+from numpy import linalg as la
+import matplotlib as mp
+import matplotlib.pyplot as plt
 
 
 def kit_hamiltonian(mu: float, t: float, delta: float, sites: int) -> np.ndarray:
@@ -11,17 +14,17 @@ def kit_hamiltonian(mu: float, t: float, delta: float, sites: int) -> np.ndarray
     :return: Kitaev Hamiltonian
     """
 
-    h = np.zeros([2*sites, 2*sites])
-    gammaminus = t - delta
-    gammaplus = t + delta
+    h = np.zeros([2*sites, 2*sites], dtype=complex)
+    jx = t - delta
+    jy = t + delta
 
     for n in range(sites - 1):
-        h[2*n, 2*n + 1] = -gammaplus
-        h[2*n + 1, 2*n] = gammaplus
-        h[2*n - 1, 2*n + 2] = gammaminus
-        h[2*n + 2, 2*n - 1] = gammaminus
-        h[2*n - 1, 2*n] = mu
-        h[2*n, 2*n - 1] = mu
+        h[2*n, 2*n + 1] = mu
+        h[2*n + 1, 2*n] = -mu
+        h[2*n - 1, 2*n + 2] = jx
+        h[2*n + 2, 2*n - 1] = -jx
+        h[2*n - 1, 2*n] = -jy
+        h[2*n, 2*n - 1] = jy
 
     h[2*(sites - 1) - 1, 2*(sites - 1)] = mu
     h[2*(sites - 1), 2*(sites - 1) - 1] = -mu
@@ -41,7 +44,7 @@ def bath_operators(loss: float, gain: float, sites: int) -> np.ndarray:
     :return: matrix of jump operators
     """
 
-    l = np.zeros([sites, 2*sites])
+    l = np.zeros([sites, 2*sites], dtype=complex)
 
     for n in range(sites):
         l[n, 2*n - 1] = (np.sqrt(loss) + np.sqrt(gain))/2
@@ -50,7 +53,7 @@ def bath_operators(loss: float, gain: float, sites: int) -> np.ndarray:
     return l
 
 
-def dissipator(h: np.ndarray, l: np.ndarray, sites: int) -> np.ndarray:
+def dissipator(h: np.ndarray, l: np.ndarray, sites: int) -> None:
     """
     This function calculates the matrices A, M and V
     :param h: 
@@ -58,3 +61,23 @@ def dissipator(h: np.ndarray, l: np.ndarray, sites: int) -> np.ndarray:
     :param sites: 
     :return: 
     """
+
+    m = np.zeros([2*sites, 2*sites], dtype=complex)
+    z = np.zeros([2*sites, 2*sites], dtype=complex)
+
+    m = np.dot(l.transpose(), l.conj())
+    z = h + 1j*m.real
+
+    eigenvalues = la.eigvals(-z)
+
+    idx = eigenvalues.argsort()[::-1]
+    eigenvalues = eigenvalues[idx]
+
+    plt.scatter(np.arange(len(eigenvalues)), eigenvalues.real)
+    plt.title('Real Energy Spectrum of Chain with {} Sites'.format(sites))
+    plt.show()
+
+    plt.scatter(np.arange(len(eigenvalues)), eigenvalues.imag)
+    plt.title('Imaginary Energy Spectrum of Chain with {} Sites'.format(sites))
+    plt.show()
+

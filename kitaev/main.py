@@ -1,8 +1,18 @@
 from kitaev.assemblers import kit_hamiltonian
+from kitaev.assemblers import bath_operators
+from kitaev.assemblers import dissipator
 
 
 def main():
-    kit_hamiltonian(.3, .7, .5, 25)
+    mu = 5
+    t = .7
+    delta = .2
+    loss = .63
+    gain = .63
+    sites = 20
+    h = kit_hamiltonian(mu, t, delta, sites)
+    l = bath_operators(loss, gain, sites)
+    dissipator(h, l, sites)
 
 
 if __name__ == '__main__':
