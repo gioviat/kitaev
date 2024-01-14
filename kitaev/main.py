@@ -4,14 +4,13 @@ from kitaev.assemblers import dissipator
 
 
 def main():
-    mu = 5
-    t = .7
-    delta = .2
-    loss = .63
-    gain = .63
-    sites = 20
+    mu = -0.4
+    t = -2.0
+    delta = -t
+    gamma = 0.2
+    sites = 64
     h = kit_hamiltonian(mu, t, delta, sites)
-    l = bath_operators(loss, gain, sites)
+    l = bath_operators(gamma, sites)
     dissipator(h, l, sites)
 
 
