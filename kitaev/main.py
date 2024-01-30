@@ -1,17 +1,16 @@
-from kitaev.assemblers import kit_hamiltonian
-from kitaev.assemblers import bath_operators
-from kitaev.assemblers import dissipator
+from assemblers import kit_hamiltonian, bath_operators, dissipator
+from computers import compute_EGP
 
 
 def main():
-    mu = -0.4
-    t = -2.0
+
+    mu = -0.2
+    t = -1.0
     delta = -t
     gamma = 0.2
-    sites = 64
-    h = kit_hamiltonian(mu, t, delta, sites)
-    l = bath_operators(gamma, sites)
-    dissipator(h, l, sites)
+    sites = 32
+
+    compute_EGP(mu, t, delta, gamma, sites)
 
 
 if __name__ == '__main__':
