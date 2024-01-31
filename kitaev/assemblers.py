@@ -18,17 +18,17 @@ def kit_hamiltonian(mu: float, t: float, delta: float, sites: int) -> np.ndarray
     -------
     A square matrix being the Kitaev Hamiltonian in the Majorana representation.
     """
-    h = np.zeros([2*sites, 2*sites], dtype=complex)
+    h = np.zeros([2*sites, 2*sites], dtype=np.complex128)
     jx = t - delta
     jy = t + delta
 
     for n in range(0, sites - 1):
         h[2*n, 2*n + 1] = mu
         h[2*n + 1, 2*n] = -mu
-        h[2*n + 3, 2*n] = jy
-        h[2*n, 2*n + 3] = -jy
-        h[2*n + 1, 2*n + 2] = jx
-        h[2*n + 2, 2*n + 1] = -jx
+        h[2*n + 3, 2*n] = jx
+        h[2*n, 2*n + 3] = -jx
+        h[2*n + 1, 2*n + 2] = -jy
+        h[2*n + 2, 2*n + 1] = jy
 
     h[2*(sites - 1), 2*(sites - 1) + 1] = mu
     h[2*(sites - 1) + 1, 2*(sites - 1)] = -mu
@@ -52,9 +52,9 @@ def bath_operators(gamma: float, sites: int) -> np.ndarray:
 
     Returns
     -------
-    l:
+    The bath operators in Majorana representation
     """
-    l = np.zeros([sites - 1, 2*sites], dtype=complex)
+    l = np.zeros([sites - 1, 2*sites], dtype=np.complex128)
 
     for n in range(sites - 1):
         l[n, 2*n] = gamma
@@ -75,7 +75,7 @@ def dissipator(h: np.ndarray, l: np.ndarray) -> np.ndarray:
 
     Returns
     -------
-    z:
+    The square matrix z, whose eigenvalues are the rapidities for the system.
     """
     m = np.dot(l.transpose(), l.conj())
     assert herm(m), 'The bath matrix is not Hermitian!'
