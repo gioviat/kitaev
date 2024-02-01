@@ -11,7 +11,8 @@ def compute_EGP(mu, t, delta, gamma, sites):
     h = kit_hamiltonian(mu, t, delta, N)
     l = bath_operators(gamma, N)
     z = dissipator(h, l)
-    M = 1j*correlation_matrix(z, N) - np.identity(2*sites, dtype=np.complex128)
+    M = 1j*(correlation_matrix(z, N) - np.identity(2*sites, dtype=np.complex128))
+    assert (M.transpose == -M).all, "Matrix M is not antisymmetric!"
 
     # Building matrices Ktilde and K2tilde:
     # first build all block matrices on the diagonal:

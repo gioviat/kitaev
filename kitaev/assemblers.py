@@ -94,5 +94,6 @@ def dissipator(h: np.ndarray, l: np.ndarray) -> np.ndarray:
 def correlation_matrix(z: np.ndarray, sites: int) -> np.ndarray:
 
     c = np.identity(2*sites, dtype=np.complex128) + 4*1j*z
+    assert (c.transpose == -z).all, "Correlation matrix is not antisymmetric!"
 
     return c
