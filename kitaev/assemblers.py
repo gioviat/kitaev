@@ -1,6 +1,7 @@
 import numpy as np
 from numpy import linalg as la
 from scipy.linalg import solve_continuous_lyapunov as lyap, ishermitian as herm
+import matplotlib.pyplot as plt
 
 
 def kit_hamiltonian(mu: float, t: float, delta: float, sites: int) -> np.ndarray:
