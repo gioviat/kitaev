@@ -87,3 +87,4 @@ def plot_egp_gamma(mu: float, t: float, delta: float, gamma1: float, gamma2: flo
     plt.ylim([-0.6, 0.6])
     plt.show()
     plt.close()
+

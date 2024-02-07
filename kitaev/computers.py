@@ -79,6 +79,39 @@ def compute_EGP(mu, t, delta, gamma, sites):
     return U_real, U_imag
 
 
+def compute_gamma_transition(mu: float, t: float, delta: float, gamma1: float, gamma2: float, gamma_points: int, sites: int) -> float:
+    """
+    Computes the value of gamma in the interval [gamma1, gamma2] for which the EGP changes value.
+    Parameters
+    ----------
+    mu: onsite potential
+    t: hopping amplitude
+    delta: superconducting gap
+    gamma1: lower bound of the gamma parameter range
+    gamma2: upper bound of the gamma parameter range
+    gamma_points: number of points in the gamma parameter range
+    sites: numer of sites in the Kitaev chain
+
+    Returns
+    -------
+    gamma_trans, the value of gamma corresponding to the jump in the EGP value.
+    """
+    gamma_array = np.linspace(gamma1, gamma2, gamma_points)
+    egp_array = np.zeros([gamma_points])
+    gamma_trans = 0
+
+    for gamma_idx, gamma in enumerate(gamma_array):
+        egp_real, egp_imag = compute_EGP(mu, t, delta, gamma, sites)
+        egp_array[gamma_idx] = np.imag(np.log(egp_real + 1j*egp_imag))
+
+    for i in range(gamma_points - 1):
+        diff = egp_array[i + 1] - egp_array[i]
+        if abs(diff) > 0.5:
+            gamma_trans = gamma_array[i + 1]
+
+    return gamma_trans
+
+
 
 
 
