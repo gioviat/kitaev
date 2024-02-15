@@ -3,6 +3,17 @@ from pfapack import pfaffian as pf
 from assemblers import kit_hamiltonian, bath_operators, dissipator, correlation_matrix
 
 
+def compute_particle_density(mu: float, t: float, delta: float, gamma: float, sites: int) -> np.ndarray:
+    h = kit_hamiltonian(mu, t, delta, sites)
+    l = bath_operators(gamma, sites)
+    z = dissipator(h, l)
+    density = np.zeros(sites, dtype=np.complex128)
+    for i in range(sites):
+        density[i] = (1 + 4*z[2*i - 1, 2*i])/2
+
+    return density
+
+
 def compute_EGP(mu, t, delta, gamma, sites):
 
     N = sites

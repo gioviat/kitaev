@@ -1,7 +1,18 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from assemblers import kit_hamiltonian, bath_operators, dissipator, correlation_matrix
-from computers import compute_EGP
+from computers import compute_EGP, compute_particle_density
+
+
+def plot_density(mu: float, t: float, delta: float, gamma: float, sites: int):
+    density = compute_particle_density(mu, t, delta, gamma, sites)
+    plt.plot(density)
+    plt.title('Particle density for each site in a Kitaev chain with\n'
+              '$\mu=%.2f$, $t=%.2f$, $\Delta=%.2f$, $\gamma=%.2f$ and %d sites' % (mu, t, delta, gamma, sites))
+    plt.show()
+    plt.close()
+
+    return
 
 
 def plot_correlation(mu: float, t: float, delta: float, gamma1: float, gamma2: float, gamma_points: int, sites: int):
@@ -46,6 +57,37 @@ def plot_correlation(mu: float, t: float, delta: float, gamma1: float, gamma2: f
     plt.show()
     plt.close()
 
+    return
+
+
+def plot_egp(mu: float, t: float, delta1: float, delta2: float, delta_points: int, gamma1: float, gamma2: float, gamma_points: int, sites: int):
+
+    delta_array = np.linspace(delta1, delta2, delta_points)
+    gamma_array = np.linspace(gamma1, gamma2, gamma_points)
+    egp_array = np.zeros([delta_points, gamma_points])
+
+    for delta_idx, delta in enumerate(delta_array):
+        for gamma_idx, gamma in enumerate(gamma_array):
+            u_real, u_imag = compute_EGP(mu, t, delta, gamma, sites)
+            egp_array[delta_idx, gamma_idx] = np.imag(np.log(u_real + 1j*u_imag))
+            print((delta_idx*gamma_points+gamma_idx)/(delta_points*gamma_points)*100, '% of calculation complete')
+
+    x, y = np.meshgrid(delta_array/t, gamma_array/t)
+    z = egp_array/np.pi
+    fig = plt.figure(figsize=(9, 6))
+    fig.suptitle('EGP phase diagram for a Kitaev chain with %d sites and $\mu=%.2f$,\n'
+                 '$t=%.2f$, $\Delta_1=%.2f$, $\Delta_2=%.2f$, $\gamma_1=%.2f$ and $\gamma_2=%.2f$' % (sites, mu, t, delta1, delta2, gamma1, gamma2))
+    ax1 = fig.gca()
+    contour = ax1.pcolormesh(x, y, z, cmap='viridis')
+    ax1.grid()
+    ax1.set_xlabel(r'$\Delta/t$')
+    ax1.set_ylabel(r'$\gamma/t$')
+    cbar = [fig.colorbar(contour, shrink=0.5, aspect=5)]
+    plt.show()
+    plt.close()
+
+    return
+
 
 def plot_egp_gamma(mu: float, t: float, delta: float, gamma1: float, gamma2: float, gamma_points: int, sites: int):
     """
@@ -88,3 +130,4 @@ def plot_egp_gamma(mu: float, t: float, delta: float, gamma1: float, gamma2: flo
     plt.show()
     plt.close()
 
+    return
