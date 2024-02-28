@@ -1,6 +1,6 @@
 import numpy as np
 from numpy import linalg as la
-from scipy.linalg import solve_continuous_lyapunov as lyap, ishermitian as herm
+from scipy.linalg import ishermitian as herm, solve_continuous_lyapunov as lyap
 import matplotlib.pyplot as plt
 
 
@@ -23,6 +23,8 @@ def kit_hamiltonian(mu: float, t: float, delta: float, sites: int) -> np.ndarray
     jx = t - delta
     jy = t + delta
 
+    PBC = True
+
     for n in range(0, sites - 1):
         h[2*n, 2*n + 1] = mu
         h[2*n + 1, 2*n] = -mu
@@ -34,6 +36,12 @@ def kit_hamiltonian(mu: float, t: float, delta: float, sites: int) -> np.ndarray
     h[2*(sites - 1), 2*(sites - 1) + 1] = mu
     h[2*(sites - 1) + 1, 2*(sites - 1)] = -mu
 
+    if PBC:
+        h[0, 2*sites - 1] = jy
+        h[2*sites - 1, 0] = -jy
+        h[2*sites - 2, 1] = jx
+        h[2, 2*sites - 2] = -jx
+
     h = (1j/4)*h
 
     assert (h.transpose == -h).all, "Majorana Hamiltonian is not antisymmetric!"
@@ -41,7 +49,7 @@ def kit_hamiltonian(mu: float, t: float, delta: float, sites: int) -> np.ndarray
     return h
 
 
-def bath_operators(gamma: float, sites: int) -> np.ndarray:
+def bath_operators(gamma_g: float, gamma_l: float, sites: int) -> np.ndarray:
     """
     Calculates the matrix l encoding dissipation in the Lindblad approximation, for baths that
     create and annihilate fermions at the same rate (i.e. the jump operators are Hermitian).
@@ -55,16 +63,30 @@ def bath_operators(gamma: float, sites: int) -> np.ndarray:
     -------
     The bath operators in Majorana representation
     """
-    l = np.zeros([sites - 1, 2*sites], dtype=np.complex128)
 
-    for n in range(sites - 1):
-        l[n, 2*n] = gamma
-        l[n, 2*n + 3] = 1j*gamma
+    l = np.zeros([2*sites, 2*sites], dtype=np.complex128)
+
+    for i in range(2*sites):
+        if i % 2 == 0:
+            l[i, i] = np.sqrt(gamma_g)/2
+            l[i + 1, i] = 1j*np.sqrt(gamma_g)/2
+        else:
+            l[i - 1, i] = np.sqrt(gamma_l)/2
+            l[i, i] = -1j*np.sqrt(gamma_l)/2
+
+    plt.matshow(l.real)
+    plt.colorbar()
+    plt.title('Real part of L')
+    plt.matshow(l.imag)
+    plt.colorbar()
+    plt.title('Imaginary part of L')
+    plt.show()
+    plt.close()
 
     return l
 
 
-def dissipator(h: np.ndarray, l: np.ndarray) -> np.ndarray:
+def dissipator(h: np.ndarray, l: np.ndarray, sites: int) -> np.ndarray:
     """
     Calculates the matrix z, solution of the continuous time Lyapunov equation, and verifies that
     all the rapidities lie away from the imaginary axis.
@@ -78,8 +100,24 @@ def dissipator(h: np.ndarray, l: np.ndarray) -> np.ndarray:
     -------
     The square matrix z, whose eigenvalues are the rapidities for the system.
     """
-    m = np.dot(l.transpose(), l.conj())
+
+    m = np.zeros([2*sites, 2*sites], dtype=np.complex128)
+
+    for i, j in range(2*sites, 2*sites):
+        for k in range(2*sites):
+            m[i, j] += l[k, i]*l[k, j].conj()
+            print('ciao')
+
     assert herm(m), 'The bath matrix is not Hermitian!'
+
+    #plt.matshow(m.real)
+    #plt.colorbar()
+    #plt.title('Real part of M')
+    #plt.matshow(m.imag)
+    #plt.colorbar()
+    #plt.title('Imaginary part of M')
+    #plt.show()
+    #plt.close()
 
     x = -2*1j*h + 2*m.real
 
@@ -88,6 +126,7 @@ def dissipator(h: np.ndarray, l: np.ndarray) -> np.ndarray:
 
     evals = la.eigvals(x)
     assert all(evals), 'The rapidities do not lie all away from the imaginary axis!'
+
 
     return z
 

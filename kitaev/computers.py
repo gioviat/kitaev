@@ -3,10 +3,10 @@ from pfapack import pfaffian as pf
 from assemblers import kit_hamiltonian, bath_operators, dissipator, correlation_matrix
 
 
-def compute_particle_density(mu: float, t: float, delta: float, gamma: float, sites: int) -> np.ndarray:
+def compute_particle_density(mu: float, t: float, delta: float, gamma_g: float, gamma_l: float, sites: int) -> np.ndarray:
     h = kit_hamiltonian(mu, t, delta, sites)
-    l = bath_operators(gamma, sites)
-    z = dissipator(h, l)
+    l = bath_operators(gamma_g, gamma_l, sites)
+    z = dissipator(h, l, sites)
     density = np.zeros(sites, dtype=np.complex128)
     for i in range(sites):
         density[i] = (1 + 4*z[2*i - 1, 2*i])/2
@@ -20,8 +20,8 @@ def compute_EGP(mu, t, delta, gamma, sites):
 
     # Build the correlation matrix M, with M_ij = i*(<w_i w_j>_NESS - delta_{ij}):
     h = kit_hamiltonian(mu, t, delta, N)
-    l = bath_operators(gamma, N)
-    z = dissipator(h, l)
+    l = bath_operators(gamma, N, sites)
+    z = dissipator(h, l, sites)
     M = 1j*(correlation_matrix(z, N) - np.identity(2*sites, dtype=np.complex128))
     assert (M.transpose == -M).all, "Matrix M is not antisymmetric!"
 

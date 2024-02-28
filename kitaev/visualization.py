@@ -4,11 +4,12 @@ from assemblers import kit_hamiltonian, bath_operators, dissipator, correlation_
 from computers import compute_EGP, compute_particle_density
 
 
-def plot_density(mu: float, t: float, delta: float, gamma: float, sites: int):
-    density = compute_particle_density(mu, t, delta, gamma, sites)
-    plt.plot(density)
+def plot_density(mu: float, t: float, delta: float, gamma_g: float, gamma_l: float, sites: int):
+    density = compute_particle_density(mu, t, delta, gamma_g, gamma_l, sites)
+    plt.scatter(np.arange(sites), density)
     plt.title('Particle density for each site in a Kitaev chain with\n'
-              '$\mu=%.2f$, $t=%.2f$, $\Delta=%.2f$, $\gamma=%.2f$ and %d sites' % (mu, t, delta, gamma, sites))
+              '$\mu=%.2f$, $t=%.2f$, $\Delta=%.2f$, $\gamma_g=%.2f$, $\gamma_l=%.2f$ and %d sites' % (mu, t, delta, gamma_g, gamma_l, sites))
+    #plt.ylim([-0.6,0.6])
     plt.show()
     plt.close()
 
