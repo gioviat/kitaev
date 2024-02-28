@@ -103,21 +103,21 @@ def dissipator(h: np.ndarray, l: np.ndarray, sites: int) -> np.ndarray:
 
     m = np.zeros([2*sites, 2*sites], dtype=np.complex128)
 
-    for i, j in range(2*sites, 2*sites):
-        for k in range(2*sites):
-            m[i, j] += l[k, i]*l[k, j].conj()
-            print('ciao')
+    for i in range(2*sites):
+        for j in range(2*sites):
+            for k in range(2*sites):
+                m[i, j] += l[k, i]*l[k, j].conj()
 
     assert herm(m), 'The bath matrix is not Hermitian!'
 
-    #plt.matshow(m.real)
-    #plt.colorbar()
-    #plt.title('Real part of M')
-    #plt.matshow(m.imag)
-    #plt.colorbar()
-    #plt.title('Imaginary part of M')
-    #plt.show()
-    #plt.close()
+    plt.matshow(m.real)
+    plt.colorbar()
+    plt.title('Real part of M')
+    plt.matshow(m.imag)
+    plt.colorbar()
+    plt.title('Imaginary part of M')
+    plt.show()
+    plt.close()
 
     x = -2*1j*h + 2*m.real
 
