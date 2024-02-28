@@ -83,7 +83,7 @@ def bath_operators(gamma_g: float, gamma_l: float, sites: int) -> np.ndarray:
     plt.show()
     plt.close()
 
-    return l
+    return L
 
 
 def dissipator(h: np.ndarray, L: np.ndarray, sites: int) -> np.ndarray:
@@ -106,7 +106,7 @@ def dissipator(h: np.ndarray, L: np.ndarray, sites: int) -> np.ndarray:
     for i in range(2*sites):
         for j in range(2*sites):
             for k in range(2*sites):
-                m[i, j] += L[k, i]*L[k, j].conj()
+                m[i, j] += L[i, k]*L[j, k].conj()
 
     assert herm(m), 'The bath matrix is not Hermitian!'
 
