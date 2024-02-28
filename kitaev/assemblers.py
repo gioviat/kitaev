@@ -64,20 +64,20 @@ def bath_operators(gamma_g: float, gamma_l: float, sites: int) -> np.ndarray:
     The bath operators in Majorana representation
     """
 
-    l = np.zeros([2*sites, 2*sites], dtype=np.complex128)
+    L = np.zeros([2*sites, 2*sites], dtype=np.complex128)
 
     for i in range(2*sites):
         if i % 2 == 0:
-            l[i, i] = np.sqrt(gamma_g)/2
-            l[i + 1, i] = 1j*np.sqrt(gamma_g)/2
+            L[i, i] = np.sqrt(gamma_g)/2
+            L[i + 1, i] = 1j*np.sqrt(gamma_g)/2
         else:
-            l[i - 1, i] = np.sqrt(gamma_l)/2
-            l[i, i] = -1j*np.sqrt(gamma_l)/2
+            L[i - 1, i] = np.sqrt(gamma_l)/2
+            L[i, i] = -1j*np.sqrt(gamma_l)/2
 
-    plt.matshow(l.real)
+    plt.matshow(L.real)
     plt.colorbar()
     plt.title('Real part of L')
-    plt.matshow(l.imag)
+    plt.matshow(L.imag)
     plt.colorbar()
     plt.title('Imaginary part of L')
     plt.show()
@@ -86,7 +86,7 @@ def bath_operators(gamma_g: float, gamma_l: float, sites: int) -> np.ndarray:
     return l
 
 
-def dissipator(h: np.ndarray, l: np.ndarray, sites: int) -> np.ndarray:
+def dissipator(h: np.ndarray, L: np.ndarray, sites: int) -> np.ndarray:
     """
     Calculates the matrix z, solution of the continuous time Lyapunov equation, and verifies that
     all the rapidities lie away from the imaginary axis.
@@ -106,7 +106,7 @@ def dissipator(h: np.ndarray, l: np.ndarray, sites: int) -> np.ndarray:
     for i in range(2*sites):
         for j in range(2*sites):
             for k in range(2*sites):
-                m[i, j] += l[k, i]*l[k, j].conj()
+                m[i, j] += L[k, i]*L[k, j].conj()
 
     assert herm(m), 'The bath matrix is not Hermitian!'
 
