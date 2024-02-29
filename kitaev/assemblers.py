@@ -86,7 +86,7 @@ def bath_operators(gamma_g: float, gamma_l: float, sites: int) -> np.ndarray:
     return L
 
 
-def dissipator(h: np.ndarray, L: np.ndarray, sites: int) -> np.ndarray:
+def dissipator(h: np.ndarray, L: np.ndarray, sites: int) -> (np.ndarray, np.ndarray):
     """
     Calculates the matrix z, solution of the continuous time Lyapunov equation, and verifies that
     all the rapidities lie away from the imaginary axis.
@@ -127,8 +127,7 @@ def dissipator(h: np.ndarray, L: np.ndarray, sites: int) -> np.ndarray:
     evals = la.eigvals(x)
     assert all(evals), 'The rapidities do not lie all away from the imaginary axis!'
 
-
-    return z
+    return z, m
 
 
 def correlation_matrix(z: np.ndarray, sites: int) -> np.ndarray:

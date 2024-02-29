@@ -6,10 +6,10 @@ from assemblers import kit_hamiltonian, bath_operators, dissipator, correlation_
 def compute_particle_density(mu: float, t: float, delta: float, gamma_g: float, gamma_l: float, sites: int) -> np.ndarray:
     h = kit_hamiltonian(mu, t, delta, sites)
     l = bath_operators(gamma_g, gamma_l, sites)
-    z = dissipator(h, l, sites)
+    z, m = dissipator(h, l, sites)
     density = np.zeros(sites, dtype=np.complex128)
     for i in range(sites):
-        density[i] = (1 + 4*z[2*i - 1, 2*i])/2
+        density[i] = 1/2 - 1j*m[2*i, 2*i + 1]/2
 
     return density
 
