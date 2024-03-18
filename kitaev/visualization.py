@@ -1,25 +1,31 @@
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
-from assemblers import kit_hamiltonian, bath_operators, dissipator, correlation_matrix
+from assemblers import kit_hamiltonian, dissipator, correlation_matrix
 from computers import compute_EGP, compute_particle_density
+
+matplotlib.rcParams.update({'font.size': 8})
 
 
 def plot_density(mu: float, t: float, delta: float, gamma_g: float, gamma_l: float, sites: int):
     density = compute_particle_density(mu, t, delta, gamma_g, gamma_l, sites)
     plt.scatter(np.arange(sites), density)
     plt.title('Particle density for each site in a Kitaev chain with\n'
-              '$\mu=%.2f$, $t=%.2f$, $\Delta=%.2f$, $\gamma_g=%.2f$, $\gamma_l=%.2f$ and %d sites' % (mu, t, delta, gamma_g, gamma_l, sites))
-    #plt.ylim([-0.6,0.6])
+              '$\mu=%.2f$, $t=%.2f$, $\Delta=%.2f$, $\gamma_g=%.2f$, $\gamma_l=%.2f$ '
+              'and %d sites' % (mu, t, delta, gamma_g, gamma_l, sites))
+    plt.ylim([-0.1,1.2])
+    plt.xlabel('Sites')
+    plt.ylabel('Average particle density')
     plt.show()
     plt.close()
 
     return
 
 
-def plot_correlation(mu: float, t: float, delta: float, gamma1: float, gamma2: float, gamma_points: int, sites: int):
+def plot_correlation(mu: float, t: float, delta: float, gamma_g: float, gamma_l: float,
+                     delta_points: int, sites: int):
     """
-    Plots the real and imaginary parts of the correlation matrix for the Kitaev chain, for various
-    values of the coupling constant gamma, ranging from gamma1 to gamma2.
+    Plots the real and imaginary parts of the correlation matrix for the Kitaev chain..
     Parameters
     ----------
     mu: onsite potential
@@ -34,56 +40,50 @@ def plot_correlation(mu: float, t: float, delta: float, gamma1: float, gamma2: f
     -------
     Nothing, but plots the correlation matrix.
     """
-    gamma_array = np.linspace(gamma1, gamma2, gamma_points)
-
-    h = kit_hamiltonian(mu, t, delta, sites)
-
-    fig, axs = plt.subplots(gamma_points, 2, figsize=(12, 12))
-    fig.suptitle('Real and imaginary parts of the correlation matrix for the Kitaev chain\n'
-                 'with $\mu=%.2f$, $t =%.2f$, $\Delta=%.2f$ and various choices of $\gamma$ ranging\n'
-                 'from $\gamma_1=%.2f$ to $\gamma_2=%.2f$' % (mu, t, delta, gamma1, gamma2))
-    for i in range(gamma_points):
-        gamma = gamma_array[i]
-        l = bath_operators(gamma, sites)
-        z = dissipator(h, l)
-        c = correlation_matrix(z, sites)
-        c_real = c.real
-        c_imag = c.imag
-        ax1 = axs[i, 0].imshow(c_real)
-        axs[i, 0].set_title('Real part, $\gamma=%.2f$' % gamma)
-        fig.colorbar(ax1)
-        ax2 = axs[i, 1].imshow(c_imag)
-        axs[i, 1].set_title('Imaginary part, $\gamma=%.2f$' % gamma)
-        fig.colorbar(ax2)
+    H = kit_hamiltonian(mu, t, delta, sites)
+    M = dissipator(gamma_g, gamma_l, sites)
+    C = correlation_matrix(H, M, sites)
+    plt.matshow(C.real, cmap='inferno')
+    plt.colorbar()
+    plt.title('Real part of the correlation matrix\n'
+              'for a Kitaev chain with $\mu=%.2f$, $t=%.2f$, $\Delta=%.2f$,\n'
+              '$\gamma_g=%.2f$, $\gamma_l=%.2f$ and %d sites\n' % (mu, t, delta, gamma_g, gamma_l, sites))
+    plt.matshow(C.imag, cmap='inferno')
+    plt.colorbar()
+    plt.title('Imaginary part of the correlation matrix\n'
+              'for a Kitaev chain with $\mu=%.2f$, $t=%.2f$, $\Delta=%.2f$,\n'
+              '$\gamma_g=%.2f$, $\gamma_l=%.2f$ and %d sites\n' % (mu, t, delta, gamma_g, gamma_l, sites))
     plt.show()
     plt.close()
 
     return
 
 
-def plot_egp(mu: float, t: float, delta1: float, delta2: float, delta_points: int, gamma1: float, gamma2: float, gamma_points: int, sites: int):
+def plot_egp(mu: float, t: float, delta1: float, delta2: float, delta_points: int, gamma_g1: float, gamma_g2: float,
+             gamma_l: float, gamma_points: int, sites: int):
 
     delta_array = np.linspace(delta1, delta2, delta_points)
-    gamma_array = np.linspace(gamma1, gamma2, gamma_points)
+    gamma_array = np.linspace(gamma_g1, gamma_g2, gamma_points)
     egp_array = np.zeros([delta_points, gamma_points])
 
     for delta_idx, delta in enumerate(delta_array):
-        for gamma_idx, gamma in enumerate(gamma_array):
-            u_real, u_imag = compute_EGP(mu, t, delta, gamma, sites)
+        for gamma_idx, gamma_g in enumerate(gamma_array):
+            u_real, u_imag = compute_EGP(mu, t, delta, gamma_g, gamma_l, sites)
             egp_array[delta_idx, gamma_idx] = np.imag(np.log(u_real + 1j*u_imag))
             print((delta_idx*gamma_points+gamma_idx)/(delta_points*gamma_points)*100, '% of calculation complete')
 
-    x, y = np.meshgrid(delta_array/t, gamma_array/t)
+    x, y = np.meshgrid(delta_array/t, gamma_array/gamma_l)
     z = egp_array/np.pi
     fig = plt.figure(figsize=(9, 6))
     fig.suptitle('EGP phase diagram for a Kitaev chain with %d sites and $\mu=%.2f$,\n'
-                 '$t=%.2f$, $\Delta_1=%.2f$, $\Delta_2=%.2f$, $\gamma_1=%.2f$ and $\gamma_2=%.2f$' % (sites, mu, t, delta1, delta2, gamma1, gamma2))
+                 '$t=%.2f$, $\Delta_1=%.2f$, $\Delta_2=%.2f$, $\gamma_{g1}=%.2f$, $\gamma_{g2}=%.2f$ and '
+                 '$\gamma_l = %.2f$' % (sites, mu, t, delta1, delta2, gamma_g1, gamma_g2, gamma_l))
     ax1 = fig.gca()
     contour = ax1.pcolormesh(x, y, z, cmap='viridis')
     ax1.grid()
     ax1.set_xlabel(r'$\Delta/t$')
-    ax1.set_ylabel(r'$\gamma/t$')
-    cbar = [fig.colorbar(contour, shrink=0.5, aspect=5)]
+    ax1.set_ylabel(r'$\gamma_g/\gamma_l$')
+    cbar = [fig.colorbar(contour)]
     plt.show()
     plt.close()
 

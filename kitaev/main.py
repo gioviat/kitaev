@@ -3,22 +3,21 @@ from visualization import plot_correlation, plot_egp_gamma, plot_egp, plot_densi
 
 def main():
 
-    mu = 0.01
-    t = 0.5
+    mu = 0.2
+    t = 0.4
     delta1 = 0
-    delta2 = 0.2
-    delta_points = 50
-    gamma1 = 2
-    gamma2 = 0
+    delta2 = 0
+    delta_points = 2
+    gamma_g1 = 0
+    gamma_g2 = 2
+    gamma_l = 0.5
     gamma_points_correlation = 1
-    gamma_points_egp = 50
+    gamma_points_egp = 100
     sites = 16
 
-    gamma_plus = (gamma1 + gamma2)/4
-    gamma_minus = (gamma1 - gamma2)/4
-    plot_density(mu, t, delta2, gamma1, gamma2, sites)
-    #plot_correlation(mu, t, delta2, gamma1, gamma2, gamma_points_correlation, sites)
-    #plot_egp(mu, t, delta1, delta2, delta_points, gamma1, gamma2, gamma_points_egp, sites)
+    plot_density(mu, t, delta2, gamma_g2, gamma_l, sites)
+    plot_correlation(mu, t, delta2, gamma_g2, gamma_l, delta_points, sites)
+    plot_egp(mu, t, delta1, delta2, delta_points, gamma_g1, gamma_g2, gamma_l, gamma_points_egp, sites)
 
 
 if __name__ == '__main__':

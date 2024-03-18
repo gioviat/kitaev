@@ -17,122 +17,161 @@ def kit_hamiltonian(mu: float, t: float, delta: float, sites: int) -> np.ndarray
 
     Returns
     -------
-    A square matrix being the Kitaev Hamiltonian in the Majorana representation.
+    The antisymmetric square matrix H being the Kitaev Hamiltonian in the Majorana representation.
     """
-    h = np.zeros([2*sites, 2*sites], dtype=np.complex128)
+    H = np.zeros([2*sites, 2*sites], dtype=np.complex128)
     jx = t - delta
     jy = t + delta
 
     PBC = True
 
     for n in range(0, sites - 1):
-        h[2*n, 2*n + 1] = mu
-        h[2*n + 1, 2*n] = -mu
-        h[2*n + 3, 2*n] = jx
-        h[2*n, 2*n + 3] = -jx
-        h[2*n + 1, 2*n + 2] = -jy
-        h[2*n + 2, 2*n + 1] = jy
+        H[2*n, 2*n + 1] = mu
+        H[2*n + 1, 2*n] = -mu
+        H[2*n + 3, 2*n] = -jx
+        H[2*n, 2*n + 3] = jx
+        H[2*n + 1, 2*n + 2] = -jy
+        H[2*n + 2, 2*n + 1] = jy
 
-    h[2*(sites - 1), 2*(sites - 1) + 1] = mu
-    h[2*(sites - 1) + 1, 2*(sites - 1)] = -mu
+    H[2*(sites - 1), 2*(sites - 1) + 1] = mu
+    H[2*(sites - 1) + 1, 2*(sites - 1)] = -mu
 
     if PBC:
-        h[0, 2*sites - 1] = jy
-        h[2*sites - 1, 0] = -jy
-        h[2*sites - 2, 1] = jx
-        h[2, 2*sites - 2] = -jx
+        H[0, 2*sites - 1] = jy
+        H[2*sites - 1, 0] = -jy
+        H[2*sites - 2, 1] = jx
+        H[1, 2*sites - 2] = -jx
 
-    h = (1j/4)*h
+    H = (1j/4)*H
 
-    assert (h.transpose == -h).all, "Majorana Hamiltonian is not antisymmetric!"
+    assert (H.T == -H).all, "Majorana Hamiltonian is not antisymmetric!"
 
-    return h
+    visualization = False
+    if visualization:
+        fig, ax = plt.subplots()
+        ax.matshow(H.imag)
+        for (i, j), z in np.ndenumerate(H.imag):
+            ax.text(j, i, '{:0.3f}'.format(z), ha='center', va='center')
+        fig.suptitle('Kitaev Hamiltonian with $\mu=%.2f$, $t=%.2f$, $\Delta=%.2f$ and $%d$ sites' % (mu, t, delta, sites))
+
+    return H
 
 
-def bath_operators(gamma_g: float, gamma_l: float, sites: int) -> np.ndarray:
+def dissipator(gamma_g: float, gamma_l: float, sites: int) -> np.ndarray:
     """
-    Calculates the matrix l encoding dissipation in the Lindblad approximation, for baths that
-    create and annihilate fermions at the same rate (i.e. the jump operators are Hermitian).
+    Calculates the matrix M encoding dissipation in the Lindblad approximation, for baths that
+    create and annihilate fermions on each site.
 
     Parameters
     ----------
-    gamma: rate of creation/annihilation of fermions
+    gamma_g: rate of fermion creation
+    gamma_l: rate of fermion annihilation
     sites: number of sites of the Kitaev chain
 
     Returns
     -------
-    The bath operators in Majorana representation
+    The Hermitian square matrix M, describing the effect of dissipation as a result on the interaction with the
+    environment.
     """
 
-    L = np.zeros([2*sites, 2*sites], dtype=np.complex128)
+    # Create a list of the vectors describing the effect of the environment on each site in the Majorana representation
+    l_mu_list = []
 
-    for i in range(2*sites):
+    for i in range(2*sites - 2):
+        l_mu = np.zeros(2*sites, dtype=np.complex128)
         if i % 2 == 0:
-            L[i, i] = np.sqrt(gamma_g)/2
-            L[i + 1, i] = 1j*np.sqrt(gamma_g)/2
+            l_mu[i] = 1
+            l_mu[i + 1] = 1j
+            l_mu[i + 2] = 1j
+            l_mu[i + 3] = -1
+            l_mu *= np.sqrt(gamma_g)/2
         else:
-            L[i - 1, i] = np.sqrt(gamma_l)/2
-            L[i, i] = -1j*np.sqrt(gamma_l)/2
+            l_mu[i - 1] = 1
+            l_mu[i] = -1j
+            l_mu[i + 1] = -1j
+            l_mu[i + 2] = -1
+            l_mu *= np.sqrt(gamma_l)/2
+        l_mu_list.append(l_mu)
 
-    plt.matshow(L.real)
-    plt.colorbar()
-    plt.title('Real part of L')
-    plt.matshow(L.imag)
-    plt.colorbar()
-    plt.title('Imaginary part of L')
-    plt.show()
-    plt.close()
+    # Define the last two bath vectors
+    l_mu = np.zeros(2*sites, dtype=np.complex128)
+    l_mu[2*sites - 2] = 1
+    l_mu[2*sites - 1] = 1j
+    l_mu[0] = 1j
+    l_mu[1] = -1
+    l_mu *= np.sqrt(gamma_g)/2
+    l_mu_list.append(l_mu)
 
-    return L
+    l_mu = np.zeros(2*sites, dtype=np.complex128)
+    l_mu[2*sites - 2] = 1
+    l_mu[2*sites - 1] = -1j
+    l_mu[0] = -1j
+    l_mu[1] = -1
+    l_mu *= np.sqrt(gamma_l)/2
+    l_mu_list.append(l_mu)
+
+    # Initialize and calculate the matrix M as the sum over all the l_mu's of the Kronecker product of l_mu and l_mu^*
+    M = np.zeros([2*sites, 2*sites], dtype=np.complex128)
+    for k in range(2*sites):
+        M += np.kron(l_mu_list[k], l_mu_list[k].conj()).reshape(2*sites, 2*sites)
+
+    assert herm(M), 'The bath matrix is not Hermitian!'
+
+    visualization = False
+    if visualization:
+        fig, ax = plt.subplots()
+        ax.matshow(M.real)
+        for (i, j), z in np.ndenumerate(M.real):
+            ax.text(j, i, '{:0.3f}'.format(z), ha='center', va='center')
+        fig.suptitle('Real part of the dissipation matrix M, with $\gamma_g=%.2f$, $\gamma_l=%.2f$' % (gamma_g, gamma_l))
+        fig, ax = plt.subplots()
+        ax.matshow(M.imag)
+        for (i, j), z in np.ndenumerate(M.imag):
+            ax.text(j, i, '{:0.3f}'.format(z), ha='center', va='center')
+        fig.suptitle('Imaginary part of the dissipation matrix M, with $\gamma_g=%.2f$, $\gamma_l=%.2f$' % (gamma_g, gamma_l))
+        plt.show()
+        plt.close()
+
+    return M
 
 
-def dissipator(h: np.ndarray, L: np.ndarray, sites: int) -> (np.ndarray, np.ndarray):
+def correlation_matrix(H: np.ndarray, M: np.ndarray, sites: int) -> np.ndarray:
     """
-    Calculates the matrix z, solution of the continuous time Lyapunov equation, and verifies that
-    all the rapidities lie away from the imaginary axis.
+    Calculates the matrix Z, solution of the continuous time Lyapunov equation, and verifies that
+    all the rapidities lie away from the imaginary axis; then uses it to calculate the correlation matrix C.
 
     Parameters
     ----------
-    h: Kitaev Hamiltonian
-    l: bath operators
+    H: Kitaev Hamiltonian
+    M: dissipation matrix
+    sites: number of sites in the system
 
     Returns
     -------
-    The square matrix z, whose eigenvalues are the rapidities for the system.
+    The square antisymmetric correlation matrix C, containing all the information about the system in the NESS.
     """
 
-    m = np.zeros([2*sites, 2*sites], dtype=np.complex128)
+    X = -2.*1j*H + 2.*M.real
 
-    for i in range(2*sites):
-        for j in range(2*sites):
-            for k in range(2*sites):
-                m[i, j] += L[i, k]*L[j, k].conj()
+    Z = lyap(X.T, -M.imag)
+    assert (Z.T == -Z).all, "Matrix Z is not antisymmetric!"
 
-    assert herm(m), 'The bath matrix is not Hermitian!'
+    evals = la.eigvals(X)
+    assert all(evals), "The rapidities do not lie all away from the imaginary axis!"
 
-    plt.matshow(m.real)
-    plt.colorbar()
-    plt.title('Real part of M')
-    plt.matshow(m.imag)
-    plt.colorbar()
-    plt.title('Imaginary part of M')
-    plt.show()
-    plt.close()
-
-    x = -2*1j*h + 2*m.real
-
-    z = lyap(x, m.imag)
-    assert (z.transpose == -z).all, "Matrix Z is not antisymmetric!"
-
-    evals = la.eigvals(x)
-    assert all(evals), 'The rapidities do not lie all away from the imaginary axis!'
-
-    return z, m
+    C = np.identity(2*sites, dtype=np.complex128) + 4.*1j*Z
+    assert (C.T == -C).all, "The correlation matrix C is not antisymmetric!"
 
 
-def correlation_matrix(z: np.ndarray, sites: int) -> np.ndarray:
+    visualization = False
 
-    c = np.identity(2*sites, dtype=np.complex128) + 4*1j*z
-    assert (c.transpose == -z).all, "Correlation matrix is not antisymmetric!"
+    if visualization:
+        plt.matshow(C.real)
+        plt.colorbar()
+        plt.title('Real part of the correlation matrix')
+        plt.matshow(C.imag, cmap='inferno')
+        plt.colorbar()
+        plt.show()
+        plt.close()
 
-    return c
+    return C

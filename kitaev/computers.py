@@ -1,28 +1,30 @@
 import numpy as np
+import numpy.linalg as la
 from pfapack import pfaffian as pf
-from assemblers import kit_hamiltonian, bath_operators, dissipator, correlation_matrix
+from assemblers import kit_hamiltonian, dissipator, liouvillean, correlation_matrix
 
 
 def compute_particle_density(mu: float, t: float, delta: float, gamma_g: float, gamma_l: float, sites: int) -> np.ndarray:
-    h = kit_hamiltonian(mu, t, delta, sites)
-    l = bath_operators(gamma_g, gamma_l, sites)
-    z, m = dissipator(h, l, sites)
+    H = kit_hamiltonian(mu, t, delta, sites)
+    M = dissipator(gamma_g, gamma_l, sites)
+    C = correlation_matrix(H, M, sites)
+
     density = np.zeros(sites, dtype=np.complex128)
     for i in range(sites):
-        density[i] = 1/2 - 1j*m[2*i, 2*i + 1]/2
+        density[i] = 0.5 - 0.5*1j*C[2*i, 2*i + 1]
 
     return density
 
 
-def compute_EGP(mu, t, delta, gamma, sites):
+def compute_EGP(mu, t, delta, gamma_g, gamma_l, sites):
 
     N = sites
 
-    # Build the correlation matrix M, with M_ij = i*(<w_i w_j>_NESS - delta_{ij}):
-    h = kit_hamiltonian(mu, t, delta, N)
-    l = bath_operators(gamma, N, sites)
-    z = dissipator(h, l, sites)
-    M = 1j*(correlation_matrix(z, N) - np.identity(2*sites, dtype=np.complex128))
+    # Build the covariance matrix M, with M_ij = i*(<w_i w_j>_NESS - delta_{ij}):
+    H = kit_hamiltonian(mu, t, delta, sites)
+    D = dissipator(gamma_g, gamma_l, sites)
+    C = correlation_matrix(H, D, sites)
+    M = 1j*(C - np.identity(2*sites, dtype=np.complex128))
     assert (M.transpose == -M).all, "Matrix M is not antisymmetric!"
 
     # Building matrices Ktilde and K2tilde:
@@ -66,7 +68,7 @@ def compute_EGP(mu, t, delta, gamma, sites):
             Omega = Omega * np.cos(np.pi * (k + 1) / N)
 
     # Check whether M is singular:
-    if np.linalg.matrix_rank(M) < 2 * N:
+    if np.linalg.matrix_rank(M) < 2*N:
         print('The covariance matrix M is singular! It cannot be inverted!')
         exit()
 
