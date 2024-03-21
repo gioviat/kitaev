@@ -4,6 +4,71 @@ from scipy.linalg import ishermitian as herm, solve_continuous_lyapunov as lyap
 import matplotlib.pyplot as plt
 
 
+def SSH_hamiltonian(t, tprime, sites, PBC=False):
+    """
+       Constructs the SSH Hamiltonian matrix in Majorana representation.
+
+       Parameters
+       ----------
+       t: float, A->B (intracell) hopping parameter.
+
+       tprime: float, B->A (intercell) hopping parameter.
+
+       sites: integer, number of sites (should be an even number).
+
+       PBC: boolean, flag for periodic boundary conditions.
+
+       Returns
+       -------
+       H, numpy array of shape 2*sites x 2*sites, Hamiltonian matrix
+
+       Notes
+       -----
+       Final matrix shape:
+
+                 |   0     0     0    -t     0     0     0    ... |
+                 |   0     0     t     0     0     0     0    ... |
+        T = i/4  |   0     -t    0     0     0     -t'   0    ... |
+                 |   t     0     0     0     t'    0     0    ... |
+                 |   0     0     0    -t'    0     0     0    ... |
+                 |   0     0     t'    0     0     0     t    ... |
+                 |   0     0     0     0     0     -t    0    ... |
+                 |  ...   ...   ...   ...   ...   ...   ...   ... |
+
+
+       Examples
+       --------
+       trivial topology: SSH_Hamiltonian(1.0, 0.5, 20)
+       edge-state topology: SSH_Hamiltonian(0.5, 1.0, 20)
+
+       """
+
+    # Construct first upper diagonal:
+    diag1 = np.zeros(shape=(2 * sites - 1), dtype=np.complex128)
+    diag_noise = np.zeros(shape=(2 * sites - 1), dtype=np.complex128)
+    for i in range(len(diag1)):
+        if i % 4 == 1:
+            diag1[i] = 1j * t / 4
+        elif i % 4 == 3:
+            diag1[i] = 1j * tprime / 4
+
+    # Construct third upper diagonal
+    diag3 = -diag1[1:-1]
+
+    # add diagonals to get the upper-triangular part of the matrix:
+    H = np.diag(diag1, 1) + np.diag(diag3, 3)
+
+    # add PBC elements:
+    if PBC == True:
+        H[0, 2 * sites - 1] = -1j * tprime / 4
+        H[1, 2 * sites - 2] = 1j * tprime / 4
+
+    # build the Hermitian conjugate to fill the whole matrix:
+    H += H.conj().T
+
+    return H
+
+
 def kit_hamiltonian(mu: float, t: float, delta: float, sites: int) -> np.ndarray:
     """
     Calculates the Kitaev Hamiltonian in the Majorana representation.
@@ -77,38 +142,17 @@ def dissipator(gamma_g: float, gamma_l: float, sites: int) -> np.ndarray:
     # Create a list of the vectors describing the effect of the environment on each site in the Majorana representation
     l_mu_list = []
 
-    for i in range(2*sites - 2):
-        l_mu = np.zeros(2*sites, dtype=np.complex128)
+
+    for i in range(2 * sites):
+        l_mu = np.zeros(2 * sites, dtype=np.complex128)
         if i % 2 == 0:
-            l_mu[i] = 1
-            l_mu[i + 1] = 1j
-            l_mu[i + 2] = 1j
-            l_mu[i + 3] = -1
-            l_mu *= np.sqrt(gamma_g)/2
+            l_mu[i] = np.sqrt(gamma_g) / 2
+            l_mu[i + 1] = 1j * np.sqrt(gamma_g) / 2
         else:
-            l_mu[i - 1] = 1
-            l_mu[i] = -1j
-            l_mu[i + 1] = -1j
-            l_mu[i + 2] = -1
-            l_mu *= np.sqrt(gamma_l)/2
+            l_mu[i - 1] = np.sqrt(gamma_l) / 2
+            l_mu[i] = -1j * np.sqrt(gamma_l) / 2
         l_mu_list.append(l_mu)
 
-    # Define the last two bath vectors
-    l_mu = np.zeros(2*sites, dtype=np.complex128)
-    l_mu[2*sites - 2] = 1
-    l_mu[2*sites - 1] = 1j
-    l_mu[0] = 1j
-    l_mu[1] = -1
-    l_mu *= np.sqrt(gamma_g)/2
-    l_mu_list.append(l_mu)
-
-    l_mu = np.zeros(2*sites, dtype=np.complex128)
-    l_mu[2*sites - 2] = 1
-    l_mu[2*sites - 1] = -1j
-    l_mu[0] = -1j
-    l_mu[1] = -1
-    l_mu *= np.sqrt(gamma_l)/2
-    l_mu_list.append(l_mu)
 
     # Initialize and calculate the matrix M as the sum over all the l_mu's of the Kronecker product of l_mu and l_mu^*
     M = np.zeros([2*sites, 2*sites], dtype=np.complex128)
@@ -162,6 +206,8 @@ def correlation_matrix(H: np.ndarray, M: np.ndarray, sites: int) -> np.ndarray:
     C = np.identity(2*sites, dtype=np.complex128) + 4.*1j*Z
     assert (C.T == -C).all, "The correlation matrix C is not antisymmetric!"
 
+    print('Assemblers: The rank of the covariance matrix is',
+          np.linalg.matrix_rank(1j*(C - np.identity(2*sites, dtype=np.complex128))))
 
     visualization = False
 

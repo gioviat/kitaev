@@ -1,13 +1,17 @@
 import numpy as np
 import numpy.linalg as la
 from pfapack import pfaffian as pf
-from assemblers import kit_hamiltonian, dissipator, liouvillean, correlation_matrix
+from assemblers import kit_hamiltonian, SSH_hamiltonian, dissipator, correlation_matrix
 
 
-def compute_particle_density(mu: float, t: float, delta: float, gamma_g: float, gamma_l: float, sites: int) -> np.ndarray:
-    H = kit_hamiltonian(mu, t, delta, sites)
-    M = dissipator(gamma_g, gamma_l, sites)
-    C = correlation_matrix(H, M, sites)
+def compute_particle_density(t: float, tprime: float, gamma_g: float, gamma_l: float, sites: int) -> np.ndarray:
+    H = SSH_hamiltonian(t, tprime, sites, PBC=False)
+    D = dissipator(gamma_g, gamma_l, sites)
+    C = correlation_matrix(H, D, sites)
+    M = 1j*(C - np.identity(2*sites, dtype=np.complex128))
+
+    print('Compute density: The rank of the covariance matrix is',
+          np.linalg.matrix_rank(M))
 
     density = np.zeros(sites, dtype=np.complex128)
     for i in range(sites):
@@ -16,15 +20,16 @@ def compute_particle_density(mu: float, t: float, delta: float, gamma_g: float, 
     return density
 
 
-def compute_EGP(mu, t, delta, gamma_g, gamma_l, sites):
+def compute_EGP(t: float, tprime: float, gamma_g: float, gamma_l: float, sites: int):
 
     N = sites
 
     # Build the covariance matrix M, with M_ij = i*(<w_i w_j>_NESS - delta_{ij}):
-    H = kit_hamiltonian(mu, t, delta, sites)
-    D = dissipator(gamma_g, gamma_l, sites)
-    C = correlation_matrix(H, D, sites)
-    M = 1j*(C - np.identity(2*sites, dtype=np.complex128))
+    H = SSH_hamiltonian(t, tprime, sites, PBC=False)
+    D = dissipator(gamma_g, gamma_l, N)
+    C = correlation_matrix(H, D, N)
+    M = 1j*(C - np.identity(2*N, dtype=np.complex128))
+
     assert (M.transpose == -M).all, "Matrix M is not antisymmetric!"
 
     # Building matrices Ktilde and K2tilde:
