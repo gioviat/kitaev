@@ -66,6 +66,13 @@ def SSH_hamiltonian(t, tprime, sites, PBC=False):
     # build the Hermitian conjugate to fill the whole matrix:
     H += H.conj().T
 
+    visualization = True
+    if visualization:
+        fig, ax = plt.subplots()
+        ax.matshow(H.imag)
+        for (i, j), z in np.ndenumerate(H.imag):
+            ax.text(j, i, '{:0.3f}'.format(z), ha='center', va='center')
+    plt.close()
     return H
 
 

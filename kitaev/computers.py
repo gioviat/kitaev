@@ -4,8 +4,8 @@ from pfapack import pfaffian as pf
 from assemblers import kit_hamiltonian, SSH_hamiltonian, dissipator, correlation_matrix
 
 
-def compute_particle_density(t: float, tprime: float, gamma_g: float, gamma_l: float, sites: int) -> np.ndarray:
-    H = SSH_hamiltonian(t, tprime, sites, PBC=False)
+def compute_particle_density(mu: float, t: float, delta: float, gamma_g: float, gamma_l: float, sites: int) -> np.ndarray:
+    H = kit_hamiltonian(mu, t, delta, sites)
     D = dissipator(gamma_g, gamma_l, sites)
     C = correlation_matrix(H, D, sites)
     M = 1j*(C - np.identity(2*sites, dtype=np.complex128))
@@ -20,12 +20,12 @@ def compute_particle_density(t: float, tprime: float, gamma_g: float, gamma_l: f
     return density
 
 
-def compute_EGP(t: float, tprime: float, gamma_g: float, gamma_l: float, sites: int):
+def compute_EGP(mu: float, t: float, delta: float, gamma_g: float, gamma_l: float, sites: int):
 
     N = sites
 
     # Build the covariance matrix M, with M_ij = i*(<w_i w_j>_NESS - delta_{ij}):
-    H = SSH_hamiltonian(t, tprime, sites, PBC=False)
+    H = kit_hamiltonian(mu, t, delta, sites)
     D = dissipator(gamma_g, gamma_l, N)
     C = correlation_matrix(H, D, N)
     M = 1j*(C - np.identity(2*N, dtype=np.complex128))
