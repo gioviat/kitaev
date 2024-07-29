@@ -370,9 +370,27 @@ def compute_Majorana_correlator_full(V: np.ndarray, sites: int, rounding_precisi
     return M
 
 
-def compute_particle_density(mu, t, delta, lambd, beta1, mu1, beta2, mu2, sites, rounding_precision):
-    N = sites
+def compute_particle_density(mu: float, t: float, delta: float,
+                             lambd: float, beta1: float, mu1: float, beta2: float, mu2: float,
+                             sites: int, rounding_precision: int) -> np.ndarray:
+    """
+    Calculates the average particle density N_i on each site of the Kitaev chain.
+    Args:
+        mu: onsite potential
+        t: hopping amplitude
+        delta: superconducting gap
+        lambd: system-bath coupling constant
+        beta1: inverse temperature of the first bath
+        mu1: chemical potential of the first bath
+        beta2: inverse temperature of the second bath
+        mu2: chemical potential of the second bath
+        sites: number of sites of the Kitaev chain
+        rounding_precision: number of floating point numbers to keep when rounding the rapidities
 
+    Returns:
+    dens, the array containing the average density for each site.
+    """
+    N = sites
     # First obtain matrix V from third quantisation:
     V = compute_master_normal_modes(mu, t, delta, lambd, beta1, mu1, beta2, mu2, sites, rounding_precision)
 
