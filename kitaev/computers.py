@@ -1,17 +1,28 @@
 import numpy as np
 import numpy.linalg as la
+import scipy as sp
 from pfapack import pfaffian as pf
-from assemblers import kit_hamiltonian, SSH_hamiltonian, dissipator, correlation_matrix
+from assemblers import kit_hamiltonian, dissipator, correlation_matrix
 
 
 def compute_particle_density(mu: float, t: float, delta: float, gamma_g: float, gamma_l: float, sites: int) -> np.ndarray:
+    """
+    Calculates the average particle density in the NESS for each site of the chain.
+    Args:
+        mu: onsite potential
+        t: hopping amplitude
+        delta: superconducting gap
+        gamma_g: rate of fermion creation
+        gamma_l: rate of fermion annihilation
+        sites: number of sites of the Kitaev chain
+
+    Returns:
+    The array density of length sites, where density[i] represents the average density on site i.
+    """
     H = kit_hamiltonian(mu, t, delta, sites)
     D = dissipator(gamma_g, gamma_l, sites)
     C = correlation_matrix(H, D, sites)
     M = 1j*(C - np.identity(2*sites, dtype=np.complex128))
-
-    print('Compute density: The rank of the covariance matrix is',
-          np.linalg.matrix_rank(M))
 
     density = np.zeros(sites, dtype=np.complex128)
     for i in range(sites):
@@ -20,8 +31,22 @@ def compute_particle_density(mu: float, t: float, delta: float, gamma_g: float, 
     return density
 
 
-def compute_EGP(mu: float, t: float, delta: float, gamma_g: float, gamma_l: float, sites: int):
+def compute_EGP(mu: float, t: float, delta: float, gamma_g: float, gamma_l: float, sites: int) -> (float, float):
+    """
+    Calculates the EGP for a Kitaev chain of arbitrary lenght.
+    Code is based on https://gitlab.com/cond-mat-group/redfield-ssh.
+    Args:
+        mu: chemical potential
+        t: hopping amplitude
+        delta: superconducting gap
+        gamma_g: rate of fermion creation
+        gamma_l: rate of fermion annihilation
+        sites: number of sites of the Kitaev chain
 
+    Returns:
+    U_real, the real part of U (whose phase is the EGP).
+    U_imag, the imaginary part of U (whose phase is the EGP).
+    """
     N = sites
 
     # Build the covariance matrix M, with M_ij = i*(<w_i w_j>_NESS - delta_{ij}):
@@ -95,43 +120,3 @@ def compute_EGP(mu: float, t: float, delta: float, gamma_g: float, gamma_l: floa
     U_imag = np.imag(U)
 
     return U_real, U_imag
-
-
-def compute_gamma_transition(mu: float, t: float, delta: float, gamma1: float, gamma2: float, gamma_points: int, sites: int) -> float:
-    """
-    Computes the value of gamma in the interval [gamma1, gamma2] for which the EGP changes value.
-    Parameters
-    ----------
-    mu: onsite potential
-    t: hopping amplitude
-    delta: superconducting gap
-    gamma1: lower bound of the gamma parameter range
-    gamma2: upper bound of the gamma parameter range
-    gamma_points: number of points in the gamma parameter range
-    sites: numer of sites in the Kitaev chain
-
-    Returns
-    -------
-    gamma_trans, the value of gamma corresponding to the jump in the EGP value.
-    """
-    gamma_array = np.linspace(gamma1, gamma2, gamma_points)
-    egp_array = np.zeros([gamma_points])
-    gamma_trans = 0
-
-    for gamma_idx, gamma in enumerate(gamma_array):
-        egp_real, egp_imag = compute_EGP(mu, t, delta, gamma, sites)
-        egp_array[gamma_idx] = np.imag(np.log(egp_real + 1j*egp_imag))
-
-    for i in range(gamma_points - 1):
-        diff = egp_array[i + 1] - egp_array[i]
-        if abs(diff) > 0.5:
-            gamma_trans = gamma_array[i + 1]
-
-    return gamma_trans
-
-
-
-
-
-
-

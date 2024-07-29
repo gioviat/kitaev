@@ -1,37 +1,76 @@
 import numpy as np
-import matplotlib
 import matplotlib.pyplot as plt
 from assemblers import kit_hamiltonian, dissipator, correlation_matrix
 from computers import compute_EGP, compute_particle_density
 
-matplotlib.rcParams.update({'font.size': 12})
+plt.rcParams["font.family"] = "Arial"
+plt.rcParams["font.size"] = 12
 
 
 def plot_density_gamma(mu: float, t: float, delta: float, gamma_g1: float, gamma_g2: float,
                        gamma_points: int, gamma_l: float, sites: int):
+    """
+    Plots the average density on a single site of a Kitaev chain in the NESS for a range of the coupling constants.
+    Args:
+        mu: onsite potential
+        t: hopping amplitude
+        delta: superconducting gap
+        gamma_g1: starting point of the gamma_g parameter range
+        gamma_g2: ending point of the gamma_g parameter range
+        gamma_points: number of points of the gamma array
+        gamma_l: fermion annihilation rate
+        sites: number of sites
+
+    Returns:
+    Nothing, but plots the density.
+    """
     gamma_g_array = np.linspace(gamma_g1, gamma_g2, gamma_points)
     site_density = []
-    for gamma_g in gamma_g_array:
+    for idx, gamma_g in enumerate(gamma_g_array):
         density = compute_particle_density(mu, t, delta, gamma_g, gamma_l, sites)
         site_density.append(density[0])
-    plt.plot(gamma_g_array / gamma_l, site_density)
-    plt.title('%d-site Kitaev chain with $\mu=%.2f$, $t=%.2f$, $\Delta=%.2f$' % (sites, mu, t, delta))
-    plt.xlabel('$\gamma_g/\gamma_l$')
-    plt.ylabel('Average density')
+    site_density_inv = []
+    for idx, gamma_g in enumerate(gamma_g_array):
+        density_inv = compute_particle_density(mu, t, delta, gamma_l, gamma_g, sites)
+        site_density_inv.append(density_inv[0])
+
+    plt.plot(gamma_g_array / gamma_l, site_density, label='$\gamma_g/\gamma_l$')
+    plt.plot(gamma_g_array / gamma_l, site_density_inv, label='$\gamma_l/\gamma_g$')
+    plt.xlabel('Coupling constants ratio')
+    plt.ylabel('Average particle density')
+    plt.legend()
     plt.show()
     plt.close()
 
+    return
+
 
 def plot_density(mu: float, t: float, delta: float, gamma_g: float, gamma_l: float, sites: int):
+    """
+    Plots the density on each site of a Kitaev chain in the NESS.
+    Args:
+        mu: onsite potential
+        t: hopping amplitude
+        delta: superconducting gap
+        gamma_g: fermions creation rate
+        gamma_l: fermions annihilation rate
+        sites: number of sites
+
+    Returns:
+    Nothing, but plots the density.
+    """
     density = compute_particle_density(mu, t, delta, gamma_g, gamma_l, sites)
-    plt.scatter(np.arange(sites), density)
-    plt.title('Particle density for each site in a Kitaev chain with\n'
-              '$\mu=%.2f$, $t=%.2f$, $\Delta=%.2f$, $\gamma_g=%.2f$, $\gamma_l=%.2f$ '
-              'and %d sites' % (mu, t, delta, gamma_g, gamma_l, sites))
+    density_inv = compute_particle_density(mu, t, delta, gamma_l, gamma_g, sites)
+    gamma = 0.5
+    density_eq = compute_particle_density(mu, t, delta, gamma, gamma, sites)
+    plt.scatter(np.arange(sites) + 1, density, label='$\gamma_g > \gamma_l$')
+    plt.scatter(np.arange(sites) + 1, density_inv, label='$\gamma_l > \gamma_g$')
+    plt.scatter(np.arange(sites) + 1, density_eq, label='$\gamma_g = \gamma_l$')
     plt.ylim([-0.1, 1.2])
-    plt.xticks(np.arange(0, sites, 1.0))
+    plt.xticks(np.arange(1, sites + 1, 1.0))
     plt.xlabel('Site')
     plt.ylabel('Average particle density')
+    plt.legend()
     plt.show()
     plt.close()
 
@@ -59,16 +98,9 @@ def plot_correlation(mu: float, t: float, delta: float, gamma_g: float, gamma_l:
     H = kit_hamiltonian(mu, t, delta, sites)
     M = dissipator(gamma_g, gamma_l, sites)
     C = correlation_matrix(H, M, sites)
-    plt.matshow(C.real, cmap='inferno')
-    plt.colorbar()
-    #plt.title('Real part of the correlation matrix\n'
-    #         'for a Kitaev chain with $\mu=%.2f$, $t=%.2f$, $\Delta=%.2f$,\n'
-    #        '$\gamma_g=%.2f$, $\gamma_l=%.2f$ and %d sites\n' % (mu, t, delta, gamma_g, gamma_l, sites))
     plt.matshow(C.imag, cmap='inferno')
-    plt.colorbar()
-    #plt.title('Imaginary part of the correlation matrix\n'
-    #         'for a Kitaev chain with $\mu=%.2f$, $t=%.2f$, $\Delta=%.2f$,\n'
-    #        '$\gamma_g=%.2f$, $\gamma_l=%.2f$ and %d sites\n' % (mu, t, delta, gamma_g, gamma_l, sites))
+    plt.colorbar(shrink=0.5)
+    plt.title('Imaginary part')
     plt.show()
     plt.close()
 
@@ -104,17 +136,17 @@ Nothing, but plots the EGP.
             egp_array[mu_idx, delta_idx] = np.imag(np.log(u_real + 1j * u_imag))
             print((mu_idx * delta_points + delta_idx) / (mu_points * delta_points) * 100, '% of calculation complete')
 
-    x, y = np.meshgrid(delta_array / t, mu_array / t)
+    x, y = np.meshgrid(mu_array / t, delta_array / t)
     z = egp_array / np.pi
 
     fig = plt.figure(figsize=(9, 6))
-    fig.suptitle("EGP [$\pi$]")
+    fig.suptitle("EGP [$\pi$], $\gamma_g=%.2f$, $\gamma_l=%.2f$" % (gamma_g, gamma_l))
     ax1 = fig.gca()
-    contour = ax1.pcolormesh(x, y, np.arccos(np.cos(z)), cmap='viridis')
+    contour = ax1.pcolormesh(x, y, np.arccos(np.cos(z.T)), cmap='viridis', vmin=-0.2, vmax=1.2)
     ax1.grid()
-    ax1.set_xlabel(r"$\Delta/t$")
-    ax1.set_ylabel(r'$\mu/t$')
-    cbar = [fig.colorbar(contour)]
+    ax1.set_xlabel(r"$\mu/t$")
+    ax1.set_ylabel(r'$\Delta/t$')
+    cbar = [fig.colorbar(contour, shrink=0.5, aspect=5)]
     plt.show()
     plt.close()
 
@@ -154,13 +186,13 @@ Nothing, but plots the EGP.
     z = egp_array / np.pi
 
     fig = plt.figure(figsize=(9, 6))
-    fig.suptitle("EGP [$\pi$]")
+    fig.suptitle("EGP [$\pi$], $\Delta = %.2f$" % delta)
     ax1 = fig.gca()
-    contour = ax1.pcolormesh(x, y, np.arccos(np.cos(z)), cmap='viridis')
+    contour = ax1.pcolormesh(x, y, np.arccos(np.cos(z.T)), cmap='viridis')
     ax1.grid()
     ax1.set_xlabel(r"$\mu/t$")
     ax1.set_ylabel(r'$\gamma_g/\gamma_l$')
-    cbar = [fig.colorbar(contour)]
+    cbar = [fig.colorbar(contour, shrink=0.5)]
     plt.show()
     plt.close()
 
@@ -200,13 +232,13 @@ Nothing, but plots the EGP.
     z = egp_array / np.pi
 
     fig = plt.figure(figsize=(9, 6))
-    fig.suptitle("EGP [$\pi$]")
+    fig.suptitle("EGP [$\pi$], $\Delta = %.2f$" % delta)
     ax1 = fig.gca()
-    contour = ax1.pcolormesh(x, y, np.arccos(np.cos(z)), cmap='viridis')
+    contour = ax1.pcolormesh(x, y, np.arccos(np.cos(z.T)), cmap='viridis')
     ax1.grid()
     ax1.set_xlabel(r"$t/\mu$")
     ax1.set_ylabel(r'$\gamma_g/\gamma_l$')
-    cbar = [fig.colorbar(contour)]
+    cbar = [fig.colorbar(contour, shrink=0.5)]
     plt.show()
     plt.close()
 
@@ -246,13 +278,13 @@ Nothing, but plots the EGP.
     z = egp_array / np.pi
 
     fig = plt.figure(figsize=(9, 6))
-    fig.suptitle("EGP [$\pi$]")
+    fig.suptitle("EGP [$\pi$], $\mu = %.2f$" % mu)
     ax1 = fig.gca()
-    contour = ax1.pcolormesh(x, y, np.arccos(np.cos(z)), cmap='viridis')
+    contour = ax1.pcolormesh(x, y, np.arccos(np.cos(z.T)), cmap='viridis')
     ax1.grid()
     ax1.set_xlabel(r"$\Delta/t$")
     ax1.set_ylabel(r'$\gamma_g/\gamma_l$')
-    cbar = [fig.colorbar(contour)]
+    cbar = [fig.colorbar(contour, shrink=0.5)]
     plt.show()
     plt.close()
 
