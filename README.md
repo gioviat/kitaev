@@ -1,5 +1,11 @@
 # Kitaev
 
-This repository is used to numerically calculate the energy spectrum and topological quantities for the Kitaev chain in an open setting. The Kitaev chain is a one-dimensional system described by a second quantized Hamiltonian 
+The code in this repository was used in my Master's thesis to numerically calculate the EGP [1] and other physical quantities for a Kitaev chain, using the formalism of third quantization [2].
+The idea is based on [3]. 
 
-$$H_\textup{Kit} = -\mu \sum_{n=1}^N c_n^\dagger c_n - t \sum_{n=1}^{N-1}\Bigl(c_{n+1}^\dagger c_n + \text{h.c.}\Bigr) + \Delta \sum_{n=1}^{N-1} (c_nc_{n+1}+\text{h.c.}).$$
+## References
+[1] https://journals.aps.org/prx/abstract/10.1103/PhysRevX.8.011035
+
+[2] https://arxiv.org/abs/0801.1257
+
+[3] https://journals.aps.org/prresearch/abstract/10.1103/PhysRevResearch.5.023004
