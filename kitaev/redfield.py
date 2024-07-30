@@ -407,7 +407,27 @@ def compute_particle_density(mu: float, t: float, delta: float,
     return dens
 
 
-def compute_EGP(mu, t, delta, lambd, beta1, mu1, beta2, mu2, sites, rounding_precision):
+def compute_EGP(mu: float, t: float, delta: float,
+                lambd: float, beta1: float, mu1: float, beta2: float, mu2: float,
+                sites: int, rounding_precision: int) -> (float, float):
+    """
+    Calculates the Ensemble Geometric Phase.
+    Args:
+        mu: onsite potential
+        t: hopping amplitude
+        delta: superconducting gap
+        lambd: system-bath coupling constant
+        beta1: inverse temperature of the first bath
+        mu1: chemical potential of the first bath
+        beta2: inverse temperature of the second bath
+        mu2: chemical potential of the second bath
+        sites: number of sites of the Kitaev chain
+        rounding_precision: number of floating point numbers to keep when rounding the rapidities
+
+    Returns:
+    U_real, real part of the quantity whose phase is the EGP.
+    U_imag, imaginary part of the quantity whose phase is the EGP.
+    """
     N = sites
 
     # Quantities needed:
@@ -485,8 +505,30 @@ def compute_EGP(mu, t, delta, lambd, beta1, mu1, beta2, mu2, sites, rounding_pre
     return U_real, U_imag
 
 
-def plot_EGP_phase_diagram(mu, t, delta, lambd, betap_start, betap_end, betap_points, mu_start, mu_end, mu_points, sites,
+def plot_EGP_phase_diagram(mu_k: float, t: float, delta: float, lambd: float,
+                           betap_start: float, betap_end: float, betap_points: int,
+                           mu_start: float, mu_end: float, mu_points: int, sites: int,
                            load=False, rounding_precision=8):
+    """
+    Computer the EGP phase diagram for a range of values of beta1 = beta2 and mu1 = mu2.
+    Args:
+        mu_k: onsite potential
+        t: hopping amplitude
+        delta: superconducting gap
+        lambd: system-bath coupling constant
+        betap_start: starting point of the beta parameter range
+        betap_end: ending point of the beta parameter range
+        betap_points: number of point of the beta parameter range
+        mu_start: starting point of the mu parameter range
+        mu_end: ending point of the mu parameter range
+        mu_points: number of points of the mu parameter range
+        sites: number of sites of the Kitaev chain
+        load: prints out more information on the screen
+        rounding_precision: number of floating point numbers to keep when rounding the rapidities
+
+    Returns:
+
+    """
     # Initialize arrays:
     beta_array = np.exp(np.linspace(betap_start, betap_end, betap_points))
     mu_array = np.linspace(mu_start, mu_end, mu_points)
@@ -497,7 +539,7 @@ def plot_EGP_phase_diagram(mu, t, delta, lambd, betap_start, betap_end, betap_po
     if load == False:
         for beta_idx, beta in enumerate(beta_array):
             for mu_idx, mu in enumerate(mu_array):
-                U_real, U_imag = compute_EGP(mu, t, delta, lambd, beta, mu, beta, mu, sites, rounding_precision)
+                U_real, U_imag = compute_EGP(mu_k, t, delta, lambd, beta, mu, beta, mu, sites, rounding_precision)
                 EGP_array[mu_idx, beta_idx] = np.imag(np.log(U_real + 1j * U_imag))
                 print("Working on point (beta, mu)=(", beta, ",", mu, ").",
                       (beta_idx * mu_points + mu_idx) / (betap_points * mu_points) * 100,
@@ -530,6 +572,23 @@ def plot_EGP_phase_diagram(mu, t, delta, lambd, betap_start, betap_end, betap_po
 
 
 def plot_Majorana_correlator(mu, t, delta, lambd, beta1, mu1, beta2, mu2, sites, rounding_precision):
+    """
+    Plots the imaginary part of the correlation matrix in Majorana representation.
+    Args:
+        mu: onsite potential
+        t: hopping amplitude
+        delta: superconducting gap
+        lambd: system-bath coupling constant
+        beta1: inverse temperature of the first bath
+        mu1: chemical potential of the first bath
+        beta2: inverse temperature of the second bath
+        mu2: chemical potential of the second bath
+        sites: number of sites of the Kitaev chain
+        rounding_precision: number of floating point numbers to keep when rounding the rapidities
+
+    Returns:
+    Nothing, but plots the imaginary part of the correlation matrix.
+    """
     N = sites
 
     # Obtain matrix V from third quantization and compute correlator:
@@ -545,14 +604,31 @@ def plot_Majorana_correlator(mu, t, delta, lambd, beta1, mu1, beta2, mu2, sites,
     return
 
 
-def plot_filling_beta(mu, t, delta, lambd, beta, mu_start, mu_end, mu_points, sites, rounding_precision):
+def plot_filling_beta(mu_k, t, delta, lambd, beta, mu_start, mu_end, mu_points, sites, rounding_precision):
+    """
+    Plots the average particle density on each site of the chain.
+    Args:
+        mu_k: onsite potential
+        t: hopping amplitude
+        delta: superconducting gap
+        lambd: system-bath coupling constant
+        beta: inverse temperature of the baths
+        mu_start: starting point of the mu parameter range
+        mu_end: ending point of the mu parameter range
+        mu_points: number of points of the mu parameter range
+        sites: number of sites of the Kitaev chain
+        rounding_precision: number of floating point numbers to keep when rounding the precision
+
+    Returns:
+    Nothing, but plots the density.
+    """
     # Initialize arrays and lists:
     mu_array = np.linspace(mu_start, mu_end, mu_points)
     density_list = []
 
     # Compute the average density for every value of mu2:
     for mu_idx, mu in enumerate(mu_array):
-        density_array = compute_particle_density(mu, t, delta, lambd, beta, mu, beta, mu, sites,
+        density_array = compute_particle_density(mu_k, t, delta, lambd, beta, mu, beta, mu, sites,
                                                      rounding_precision)
         density_list.append(np.sum(density_array) / sites)
         print(f"{(mu_idx + 1) / mu_points * 100} of program complete.")
@@ -574,86 +650,3 @@ def plot_filling_beta(mu, t, delta, lambd, beta, mu_start, mu_end, mu_points, si
     plt.close()
 
     return
-
-
-def plot_EGP_mu(mu1, mu2, t, delta, mu_points, lambd, beta_array, chempot, sites,
-                    rounding_precision=8):
-
-    # Initialize arrays:
-    mu_array = np.linspace(mu1, mu2, mu_points)
-    muratio_array = mu_array / t
-    cases = len(beta_array)
-    EGP_array = np.zeros(shape=(mu_points, cases))
-
-    # Loop over all points to generate the data:
-    for i in range(cases):
-        for mu_idx, mu in enumerate(mu_array):
-            EGP_real, EGP_imag = compute_EGP(mu, t, delta, lambd, beta_array[i], chempot, beta_array[i], chempot, sites,
-                                             rounding_precision)
-            EGP_array[mu_idx, i] = np.angle(EGP_real + 1j * EGP_imag)
-            print((mu_idx + mu_points * i) / (mu_points * cases) * 100, " % of calculation completed.")
-
-    # Create figure
-    fig = plt.figure(figsize=(9, 6))
-    ax1 = fig.add_subplot(111)
-    Z = EGP_array
-
-    # Plot the curves:
-    for i in range(cases):
-        plot1 = ax1.scatter(muratio_array, Z[:, i] / np.pi, label=r'$\beta_1=\beta_2=$%s' % (beta_array[i]))
-    ax1.set_ylabel(r"$\mathrm{EGP} [\pi]$")
-    #ax1.set_ylim([-1.1, 1.1])
-    ax1.grid()
-    ax1.set_xlabel(r"$\mu/t$")
-    plt.legend(loc='best')
-    plt.show()
-    plt.close()
-
-
-def plot_EGP_beta(mu, t, delta, lambd, betap_start, betap_end, betap_points, chempot_array, sites,
-                  rounding_precision=8):
-
-    # Initialize arrays:
-    beta_array = np.exp(np.linspace(betap_start, betap_end, betap_points))
-    cases = len(chempot_array)
-    EGP_array = np.zeros(shape=(betap_points, cases))
-
-    for i in range(cases):
-        for beta_idx, beta in enumerate(beta_array):
-            EGP_real, EGP_imag = compute_EGP(mu, t, delta, lambd, beta, chempot_array[i], beta, chempot_array[i], sites,
-                                             rounding_precision)
-            EGP_array[beta_idx, i] = np.imag(np.log(EGP_real + 1j * EGP_imag))
-
-            print("Working on point beta1=beta2=", beta, ",  mu1=mu2=", chempot_array[i], ".",
-                    (beta_idx + betap_points * i) / (betap_points * cases) * 100, " % of calculation completed.")
-
-    # create figure
-    fig = plt.figure(figsize=(9, 6))
-    ax1 = fig.add_subplot(111)
-    Z = EGP_array
-
-    # Plot the curves
-    for i in range(cases):
-        plot = ax1.scatter(beta_array, np.arccos(np.cos(Z[:, i])) / np.pi,
-                           label=r'$\mu_1=\mu_2=$%s' % (chempot_array[i]))
-    plt.hlines(1.0, beta_array[0], beta_array[-1], colors='red')
-    plt.hlines(-1.0, beta_array[0], beta_array[-1], colors='red')
-
-    # Set labels etc.
-    ax1.set_ylabel(r"EGP [$\pi$]")
-    ax1.set_ylim([-1.1, 1.1])
-    ax1.grid(which='both')
-
-    ax1.set_xlabel(r"$\beta_A=\beta_B$")
-    ax1.set_xscale('log')
-    plt.legend(loc='best')
-    plt.show()
-    plt.close()
-
-    return
-
-
-
-
-
-
